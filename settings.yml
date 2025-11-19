@@ -66,3 +66,14 @@ lab:
           main: 150
         memory: "16384"
         vcpu: "4"
+
+    ppc64le:
+      ip_address: 10.60.0.53
+      mac: 94:6d:ae:c5:35:be
+      arch: ppc64le
+      power_address: powercontrol.example.com
+      power_user: PowerUser
+      power_password: InsecurePassword
+      power_id: SN3826325:lsh20143:4
+      power_type: lpar
+      boot_file: petitboot.cfg

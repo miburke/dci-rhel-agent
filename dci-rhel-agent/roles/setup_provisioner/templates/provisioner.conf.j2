@@ -19,7 +19,7 @@ dhcp-boot=pxelinux.0
 
 # Use a combination of /etc/ethers & /etc/hosts instead of this ?
 {% for system, value in lab.system_inventory.items() %}
-dhcp-boot=tag:{{ system }}_boot,bootloader/{{ value.ip_address | ansible.utils.ip4_hex | upper }}/image,{{ machine_network_ip| default(local_repo_ip) }}
+dhcp-boot=tag:{{ system }}_boot,bootloader/{{ value.ip_address | ansible.utils.ip4_hex | upper }}/{{ value.boot_file | default('image') }},{{ machine_network_ip| default(local_repo_ip) }}
 {% endfor %}
 
 {% for system, value in lab.system_inventory.items() %}
