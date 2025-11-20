@@ -1,7 +1,7 @@
 FROM registry.access.redhat.com/ubi9/ubi
 
 LABEL name="dci-rhel-agent"
-LABEL version="1.0.0"
+LABEL version="2.0.0"
 LABEL maintainer="DCI Team <distributed-ci@redhat.com>"
 
 ENV LANG en_US.UTF-8
@@ -24,17 +24,15 @@ RUN pip3 install -U pip && \
     #Install dumb-init package to handle "PID 1 problem" and reap zombie processes
     pip3 install 'dumb-init==1.2.2' && \
     pip3 install xmltodict && \
-    pip3 install productmd
-
-
-# Installing dci-ansible manually to work around Ansible dependency since Ansible
-# is installed via pip here
-RUN dnf download dci-ansible
-RUN rpm -ivh --nodeps dci-ansible*.rpm
+    pip3 install productmd && \
+    # Installing dci-ansible manually to work around Ansible dependency since Ansible
+    # is installed via pip here
+    dnf download dci-ansible && \
+    rpm -ivh --nodeps dci-ansible*.rpm
 
 ENV LC_ALL="C.UTF-8"
 
-ADD dci-rhel-agent /usr/share/dci-rhel-agent/
+COPY dci-rhel-agent /usr/share/dci-rhel-agent/
 
 WORKDIR /usr/share/dci-rhel-agent
 ENTRYPOINT ["/usr/local/bin/dumb-init", "--"]
