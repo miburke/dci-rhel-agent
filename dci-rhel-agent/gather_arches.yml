@@ -3,6 +3,9 @@
   uri:
     url: "http://{{ jumpbox }}.{{ domain }}:{{ provision_port }}/systems/{{ system.value.fqdn }}"
     method: GET
+    url_username: "{{ provisioner_username }}"
+    url_password: "{{ provisioner_password }}"
+    force_basic_auth: yes
   register: system_details
 
 - name: 'Register SUT CPU arch variable'
