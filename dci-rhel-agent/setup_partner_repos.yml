@@ -11,10 +11,14 @@
     - name: Define supplementary repository versions
       set_fact:
         supp_repos:
-          - name: "Supp-{{ rhel_version }}"
-            type: "supp"
-          - name: "Ext-{{ rhel_version }}"
+          - name: "Ext-{{ rhel_version }}-RHEL-{{ rhel_version.split('.')[0] }}-prod"
             type: "ext"
+          - name: "Ext-{{ rhel_version }}-RHEL-{{ rhel_version.split('.')[0] }}-stage"
+            type: "ext"
+          - name: "Supp-{{ rhel_version }}-RHEL-{{ rhel_version.split('.')[0] }}-prod"
+            type: "supp"
+          - name: "Supp-{{ rhel_version }}-RHEL-{{ rhel_version.split('.')[0] }}-stage"
+            type: "supp"
       delegate_to: localhost
 
     - name: Download supplementary repositories with RHDL for SUT architecture
