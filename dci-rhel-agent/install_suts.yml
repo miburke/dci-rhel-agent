@@ -125,6 +125,8 @@
   retries: "{{ systems[inventory_hostname].reboot_watchdog_timeout | default(600) // 10 }}"
   delay: 10 # Every 10 seconds
   register: netboot
+  # Response body contains BMC credentials; suppress it from the Ansible log
+  no_log: true
   delegate_to: localhost
 
 - name: "Wait for kickstart to clear"
@@ -135,6 +137,8 @@
   retries: 60 # Retries for 60 * 10 seconds = 600 seconds = 10 minutes
   delay: 10 # Every 10 seconds
   register: kickstart
+  # Response body contains BMC credentials; suppress it from the Ansible log
+  no_log: true
   delegate_to: localhost
 
 - name: Wait 3600 (default) or install_watchdog seconds
