@@ -33,7 +33,9 @@
       LAB_HOST: "{{ jumpbox }}.{{ domain }}"
       LAB_PORT: 8008
       NETBOOT_TIMEOUT: "{{ lab.netboot_timeout | default(omit) }}"
+      PROVISIONER_AUTH: "{{ provisioner_auth if container.name == 'dci-provisioner' else omit }}"
   register: container_info
+  no_log: true
 
 - name: Setting facts about container
   set_fact:
