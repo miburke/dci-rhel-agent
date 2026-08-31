@@ -13,7 +13,7 @@
     - name: 'Read provisioner credentials'
       set_fact:
         provisioner_username: "{{ lookup('env','DCI_CLIENT_ID') }}"
-        provisioner_password: "{{ lookup('file', '/etc/dci-rhel-agent/secrets/provisioner_auth') }}"
+        provisioner_password: "{{ lookup('env','DCI_API_SECRET') }}"
       no_log: true
 
     - name: 'Schedule a new job in DCI Control Server'
