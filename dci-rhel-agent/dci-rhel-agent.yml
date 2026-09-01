@@ -24,6 +24,11 @@
       set_fact:
         scheduled_topic: "{{ topic }}"
       when: not is_partner_topic
+    - name: 'Read provisioner credentials'
+      set_fact:
+        provisioner_username: "{{ lookup('env','DCI_CLIENT_ID') }}"
+        provisioner_password: "{{ lookup('env','DCI_API_SECRET') }}"
+      no_log: true
 
     - name: 'Schedule a new job in DCI Control Server'
       dci_job:
@@ -64,12 +69,29 @@
         tags: '{{ dci_tags }}'
       when: dci_tags | length > 0
 
-    - name: 'Upload settings yml file'
+    - name: 'Create redacted copy of settings.yml for upload'
+      copy:
+        src: /etc/dci-rhel-agent/settings.yml
+        dest: /tmp/settings.yml.redacted
+        remote_src: yes
+
+    - name: 'Redact sensitive BMC credentials from settings copy'
+      replace:
+        path: /tmp/settings.yml.redacted
+        regexp: '^(\s*(?:power_user|power_password)\s*:\s*).*$'
+        replace: '\g<1><redacted for security>'
+
+    - name: 'Upload redacted settings yml file'
       ignore_errors: yes
       dci_file:
-        path: /etc/dci-rhel-agent/settings.yml
+        path: /tmp/settings.yml.redacted
         name: settings.yml
         job_id: "{{ hostvars.localhost.job_id }}"
+
+    - name: 'Remove redacted settings copy'
+      file:
+        path: /tmp/settings.yml.redacted
+        state: absent
 
     - name: 'Upload hooks directory contents'
       dci_file:
