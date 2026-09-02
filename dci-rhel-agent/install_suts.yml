@@ -169,7 +169,7 @@
   wait_for:
     host: "{{ inventory_hostname }}"
     port: 22
-    timeout: "{{ systems[inventory_hostname].intall_watchdog_timeout| default(3600) }}"
+    timeout: "{{ systems[inventory_hostname].install_watchdog_timeout| default(3600) }}"
   async: 3600
   poll: 0
   register: install_sleeper
