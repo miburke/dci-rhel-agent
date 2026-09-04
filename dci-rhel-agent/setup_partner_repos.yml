@@ -21,6 +21,9 @@
             type: "supp"
       delegate_to: localhost
 
+    # Normal flow: download the supplementary repos with RHDL.  On skip-download
+    # the download is bypassed and whatever repos are already present on disk (in
+    # the same location the download would target) are reused instead.
     - name: Download supplementary repositories with RHDL for SUT architecture
       shell: >
         rhdl download {{ item.name }}
@@ -33,22 +36,51 @@
       ignore_errors: yes
       become: true
       delegate_to: localhost
+      when: not (skip_download | default(false) | bool)
 
     - name: Log missing repositories
       debug:
         msg: "Repository {{ item.item.name }} not found, skipping setup"
-      loop: "{{ repo_download_result.results }}"
-      when: item.failed | default(false)
+      loop: "{{ repo_download_result.results | default([]) }}"
+      when:
+        - not (skip_download | default(false) | bool)
+        - item.failed | default(false)
 
     - name: Log successful repository downloads
       debug:
         msg: "Successfully downloaded repository {{ item.item.name }}"
-      loop: "{{ repo_download_result.results }}"
-      when: not (item.failed | default(false))
+      loop: "{{ repo_download_result.results | default([]) }}"
+      when:
+        - not (skip_download | default(false) | bool)
+        - not (item.failed | default(false))
 
     - name: Build list of successfully downloaded repositories
       set_fact:
         available_repos: "{{ repo_download_result.results | rejectattr('failed') | map(attribute='item') | list }}"
+      when: not (skip_download | default(false) | bool)
+
+    # Skip-download reuse: detect which supplementary repos are already on disk by
+    # checking for the repo metadata at the exact path the SUT will consume from
+    # (see setup_repo_on_sut.yml), and reuse only those.
+    - name: Check which supplementary repositories are present on disk (skip-download reuse)
+      stat:
+        path: >-
+          /data/{{ hostvars.localhost.topic_name }}/compose/{{ item.name }}/{{ system_arch }}/{{ 'supplementary' if item.type == 'supp' else 'extensions' }}/os/repodata/repomd.xml
+      loop: "{{ supp_repos }}"
+      register: repo_presence_result
+      delegate_to: localhost
+      when: skip_download | default(false) | bool
+
+    - name: Build list of repositories already present on disk (skip-download reuse)
+      set_fact:
+        available_repos: "{{ repo_presence_result.results | selectattr('stat.exists') | map(attribute='item') | list }}"
+      when: skip_download | default(false) | bool
+
+    - name: Log reused repositories (skip-download reuse)
+      debug:
+        msg: "Reusing already-present repository {{ item.name }}"
+      loop: "{{ available_repos }}"
+      when: skip_download | default(false) | bool
 
     - name: Setup each successfully downloaded repository on SUT
       include_tasks: setup_repo_on_sut.yml

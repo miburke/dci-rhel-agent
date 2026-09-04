@@ -35,18 +35,36 @@
       debug:
         msg: "Using standard RHEL topic {{ partner_topic_id }} ({{ standard_rhel_topic }}) for RHEL4NV components"
 
+    # When the download is skipped, the compose already on disk - not the latest
+    # available from RHDL - determines which custom component this job must use.
+    - name: Read on-disk compose metadata for skip-download reuse
+      compose_info:
+        compose_path: "/data/{{ topic_name }}/compose"
+      register: ondisk_compose
+      when: skip_download | default(false) | bool
+
+    - name: Set RHEL4NV component display_name from on-disk compose
+      set_fact:
+        partner_component_name: "{{ ondisk_compose.compose_info.compose_id }}"
+      when: skip_download | default(false) | bool
+
     - name: Get RHEL4NV component name from RHDL
       shell: rhdl compose-list {{ topic_name }} --channel nightly --format plain
       register: rhdl_component_result
       changed_when: false
+      when: not (skip_download | default(false) | bool)
 
     - name: Set RHEL4NV component display_name from RHDL
       set_fact:
         partner_component_name: "{{ rhdl_component_result.stdout_lines[1] | trim }}"
+      when: not (skip_download | default(false) | bool)
 
     - name: Debug component name
       debug:
-        msg: "RHEL4NV component name from RHDL: {{ partner_component_name }}"
+        msg: >-
+          RHEL4NV component name
+          ({{ 'on-disk compose' if (skip_download | default(false) | bool) else 'RHDL latest' }}):
+          {{ partner_component_name }}
 
     - name: Search for existing RHEL4NV component
       dci_component:
@@ -83,6 +101,37 @@
         job_id: "{{ job_id }}"
         component_id: "{{ partner_component_id }}"
         state: present
+
+    # On skip-download the job was scheduled with an empty component list, so the
+    # control server auto-selected the latest compose of the topic - which may be
+    # a different (often newer) compose than the one actually on disk.  Detach
+    # those stale compose components and make the on-disk compose the only compose
+    # the job references, so the later verification check compares like for like.
+    - name: Detach stale auto-selected compose components (skip-download reuse)
+      dci_job_component:
+        job_id: "{{ job_id }}"
+        component_id: "{{ item.id }}"
+        state: absent
+      loop: "{{ components }}"
+      loop_control:
+        label: "{{ item.display_name | default(item.id) }}"
+      when:
+        - skip_download | default(false) | bool
+        - item.type == 'compose'
+        - item.id != partner_component_id
+
+    - name: Point job components at the on-disk compose (skip-download reuse)
+      set_fact:
+        components: >-
+          {{
+            (components | rejectattr('type', 'equalto', 'compose') | list)
+            + [{
+                'id': partner_component_id,
+                'type': 'compose',
+                'display_name': partner_component_name
+              }]
+          }}
+      when: skip_download | default(false) | bool
 
     - name: Debug RHEL4NV component info
       debug:

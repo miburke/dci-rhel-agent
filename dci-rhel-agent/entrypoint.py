@@ -116,6 +116,11 @@ def main():
     skip_download = True if environ.get('SKIP_DOWNLOAD') == 'True' else False
     if skip_download:
         cmdline += ' --skip-tags "download"'
+    # When the download step is skipped (either --skip-download or --tests-only),
+    # the compose already sitting on disk - not the latest available compose - is
+    # the source of truth for RHEL4NV custom component creation and the compose
+    # verification check.  Surface this to the playbook as an extra var.
+    download_skipped = tests_only or skip_download
 
     # Read the settings file
     sets = load_settings()
@@ -128,6 +133,7 @@ def main():
         for idx, current_job in enumerate(jobs):
             print ("Beginning provision/test jobs for topic %s" % current_job['topic'])
             current_job['local_repo'] = sets['local_repo']
+            current_job['skip_download'] = download_skipped
             if 'jumpbox' in sets:
                 current_job['jumpbox'] = sets['jumpbox']
             if 'domain' in sets:
