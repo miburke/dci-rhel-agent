@@ -21,9 +21,6 @@
             type: "supp"
       delegate_to: localhost
 
-    # Normal flow: download the supplementary repos with RHDL.  On skip-download
-    # the download is bypassed and whatever repos are already present on disk (in
-    # the same location the download would target) are reused instead.
     - name: Download supplementary repositories with RHDL for SUT architecture
       shell: >
         rhdl download {{ item.name }}
@@ -59,9 +56,6 @@
         available_repos: "{{ repo_download_result.results | rejectattr('failed') | map(attribute='item') | list }}"
       when: not (skip_download | default(false) | bool)
 
-    # Skip-download reuse: detect which supplementary repos are already on disk by
-    # checking for the repo metadata at the exact path the SUT will consume from
-    # (see setup_repo_on_sut.yml), and reuse only those.
     - name: Check which supplementary repositories are present on disk (skip-download reuse)
       stat:
         path: >-

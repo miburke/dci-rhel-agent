@@ -35,8 +35,6 @@
       debug:
         msg: "Using standard RHEL topic {{ partner_topic_id }} ({{ standard_rhel_topic }}) for RHEL4NV components"
 
-    # When the download is skipped, the compose already on disk - not the latest
-    # available from RHDL - determines which custom component this job must use.
     - name: Read on-disk compose metadata for skip-download reuse
       compose_info:
         compose_path: "/data/{{ topic_name }}/compose"
@@ -102,11 +100,6 @@
         component_id: "{{ partner_component_id }}"
         state: present
 
-    # On skip-download the job was scheduled with an empty component list, so the
-    # control server auto-selected the latest compose of the topic - which may be
-    # a different (often newer) compose than the one actually on disk.  Detach
-    # those stale compose components and make the on-disk compose the only compose
-    # the job references, so the later verification check compares like for like.
     - name: Detach stale auto-selected compose components (skip-download reuse)
       dci_job_component:
         job_id: "{{ job_id }}"

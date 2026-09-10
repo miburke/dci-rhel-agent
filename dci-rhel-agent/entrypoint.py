@@ -55,10 +55,6 @@ def load_settings():
             sys.exit(1)
 
 def provision_and_test(extravars, cmdline):
-    # Path is static in the container
-    # local_repo = '/opt/dci'
-    # extravars['local_repo'] = local_repo
-
     if 'topic' in extravars.keys():
         print ("Topic is %s" % extravars['topic'])
     else:
@@ -116,10 +112,6 @@ def main():
     skip_download = True if environ.get('SKIP_DOWNLOAD') == 'True' else False
     if skip_download:
         cmdline += ' --skip-tags "download"'
-    # When the download step is skipped (either --skip-download or --tests-only),
-    # the compose already sitting on disk - not the latest available compose - is
-    # the source of truth for RHEL4NV custom component creation and the compose
-    # verification check.  Surface this to the playbook as an extra var.
     download_skipped = tests_only or skip_download
 
     # Read the settings file
